@@ -2,6 +2,7 @@
 from datetime import datetime, timezone
 from sqlalchemy import update
 from app import db
+from app.validacoes import validar_parametros_movimentacao, validar_usuario_ativo
 from app.models import Distribuicao, Produto, Usuario
 
 
@@ -11,15 +12,13 @@ def registrar_distribuicao(*, produto_id: int, usuario_id: int, quantidade: int)
     O UPDATE condicional evita estoque negativo inclusive em operações concorrentes.
     A gravação da distribuição e a dedução do estoque ocorrem na mesma transação.
     """
-    if type(quantidade) is not int or quantidade <= 0:
-        raise ValueError("A quantidade deve ser um número inteiro positivo.")
-    if type(produto_id) is not int or type(usuario_id) is not int:
-        raise ValueError("Os identificadores devem ser números inteiros.")
+    validar_parametros_movimentacao(
+        produto_id=produto_id, usuario_id=usuario_id, quantidade=quantidade
+    )
 
     try:
         usuario = db.session.get(Usuario, usuario_id)
-        if usuario is None or not usuario.ativo:
-            raise ValueError("Usuário inexistente ou inativo.")
+        validar_usuario_ativo(usuario)
 
         resultado = db.session.execute(
             update(Produto)

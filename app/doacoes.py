@@ -7,9 +7,9 @@ via HTTP dependerá da implementação de autenticação e autorização (RF01).
 from datetime import datetime, timezone
 
 from sqlalchemy import update
-from sqlalchemy.exc import SQLAlchemyError
 
 from app import db
+from app.validacoes import validar_parametros_movimentacao, validar_usuario_ativo
 from app.models import Doacao, Produto, Usuario
 
 
@@ -18,15 +18,13 @@ def registrar_doacao(*, produto_id: int, usuario_id: int, quantidade: int) -> Do
 
     Em caso de falha, a sessão é revertida, sem deixar movimentação parcial.
     """
-    if type(quantidade) is not int or quantidade <= 0:
-        raise ValueError("A quantidade deve ser um número inteiro positivo.")
-    if type(produto_id) is not int or type(usuario_id) is not int:
-        raise ValueError("Os identificadores devem ser números inteiros.")
+    validar_parametros_movimentacao(
+        produto_id=produto_id, usuario_id=usuario_id, quantidade=quantidade
+    )
 
     try:
         usuario = db.session.get(Usuario, usuario_id)
-        if usuario is None or not usuario.ativo:
-            raise ValueError("Usuário inexistente ou inativo.")
+        validar_usuario_ativo(usuario)
 
         # UPDATE atômico impede perda de incrementos em requisições concorrentes.
         resultado = db.session.execute(
