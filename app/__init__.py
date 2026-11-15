@@ -5,6 +5,7 @@ from pathlib import Path
 
 from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
+import click
 
 
 db = SQLAlchemy()
@@ -36,6 +37,21 @@ def create_app(test_config=None):
         """Cria as tabelas do banco configurado (uso inicial/local)."""
         db.create_all()
         print("Tabelas do Sistema Solidário criadas.")
+
+    @app.cli.command("registrar-doacao")
+    @click.option("--produto", "produto_id", type=int, required=True)
+    @click.option("--usuario", "usuario_id", type=int, required=True)
+    @click.option("--quantidade", type=int, required=True)
+    def registrar_doacao_cli(produto_id, usuario_id, quantidade):
+        """Registra uma doação localmente (não expõe rota HTTP sem login)."""
+        from app.doacoes import registrar_doacao
+        try:
+            doacao = registrar_doacao(
+                produto_id=produto_id, usuario_id=usuario_id, quantidade=quantidade
+            )
+        except ValueError as erro:
+            raise click.ClickException(str(erro)) from erro
+        click.echo(f"Doação {doacao.id} registrada: {quantidade} unidade(s).")
 
     @app.get("/")
     def index():

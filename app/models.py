@@ -46,3 +46,21 @@ class Produto(db.Model):
     unidade_medida = db.Column(db.String(30), nullable=False)
     quantidade_estoque = db.Column(db.Integer, nullable=False, default=0)
     ativo = db.Column(db.Boolean, nullable=False, default=True)
+
+
+class Doacao(db.Model):
+    """Entrada de alimento registrada por usuário autorizado."""
+
+    __tablename__ = "doacoes"
+    __table_args__ = (
+        CheckConstraint("quantidade > 0", name="ck_doacao_quantidade_positiva"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    produto_id = db.Column(db.Integer, db.ForeignKey("produtos.id"), nullable=False)
+    registrado_por = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
+    quantidade = db.Column(db.Integer, nullable=False)
+    data = db.Column(db.DateTime(timezone=True), nullable=False)
+
+    produto = db.relationship("Produto", backref="doacoes")
+    usuario = db.relationship("Usuario", backref="doacoes_registradas")
