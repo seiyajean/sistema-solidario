@@ -64,3 +64,21 @@ class Doacao(db.Model):
 
     produto = db.relationship("Produto", backref="doacoes")
     usuario = db.relationship("Usuario", backref="doacoes_registradas")
+
+
+class Distribuicao(db.Model):
+    """Saída de alimentos registrada por usuário autorizado."""
+
+    __tablename__ = "distribuicoes"
+    __table_args__ = (
+        CheckConstraint("quantidade > 0", name="ck_distribuicao_quantidade_positiva"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    produto_id = db.Column(db.Integer, db.ForeignKey("produtos.id"), nullable=False)
+    registrado_por = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
+    quantidade = db.Column(db.Integer, nullable=False)
+    data = db.Column(db.DateTime(timezone=True), nullable=False)
+
+    produto = db.relationship("Produto", backref="distribuicoes")
+    usuario = db.relationship("Usuario", backref="distribuicoes_registradas")

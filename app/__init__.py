@@ -53,6 +53,21 @@ def create_app(test_config=None):
             raise click.ClickException(str(erro)) from erro
         click.echo(f"Doação {doacao.id} registrada: {quantidade} unidade(s).")
 
+    @app.cli.command("registrar-distribuicao")
+    @click.option("--produto", "produto_id", type=int, required=True)
+    @click.option("--usuario", "usuario_id", type=int, required=True)
+    @click.option("--quantidade", type=int, required=True)
+    def registrar_distribuicao_cli(produto_id, usuario_id, quantidade):
+        """Registra saída localmente; não expõe rota HTTP sem autenticação."""
+        from app.distribuicoes import registrar_distribuicao
+        try:
+            distribuicao = registrar_distribuicao(
+                produto_id=produto_id, usuario_id=usuario_id, quantidade=quantidade
+            )
+        except ValueError as erro:
+            raise click.ClickException(str(erro)) from erro
+        click.echo(f"Distribuição {distribuicao.id} registrada: {quantidade} unidade(s).")
+
     @app.get("/")
     def index():
         return render_template("index.html")
