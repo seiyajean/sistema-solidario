@@ -28,6 +28,15 @@ def create_app(test_config=None):
 
     db.init_app(app)
 
+    # Importa os modelos para registrá-los no metadata do SQLAlchemy.
+    from app import models  # noqa: F401
+
+    @app.cli.command("init-db")
+    def init_db():
+        """Cria as tabelas do banco configurado (uso inicial/local)."""
+        db.create_all()
+        print("Tabelas do Sistema Solidário criadas.")
+
     @app.get("/")
     def index():
         return render_template("index.html")
