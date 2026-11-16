@@ -2,11 +2,17 @@
 from app import create_app
 
 
+
 def test_pagina_inicial():
-    app = create_app({"TESTING": True, "SECRET_KEY": "test-only"})
-    response = app.test_client().get("/")
-    assert response.status_code == 200
-    assert "Sistema Solidário" in response.get_data(as_text=True)
+    app = create_app({
+        "TESTING": True,
+        "SECRET_KEY": "test-only"
+    })
+
+    resposta = app.test_client().get("/")
+
+    assert resposta.status_code == 302
+    assert "/login" in resposta.headers["Location"]
 
 
 def test_health():
