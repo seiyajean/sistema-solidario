@@ -3,10 +3,11 @@
 from sqlalchemy import CheckConstraint, UniqueConstraint
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from flask_login import UserMixin
 from app import db
 
 
-class Usuario(db.Model):
+class Usuario(UserMixin, db.Model):
     """Pessoa autorizada a operar o sistema."""
 
     __tablename__ = "usuarios"

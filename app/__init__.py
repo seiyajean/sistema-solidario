@@ -4,11 +4,15 @@ import os
 from pathlib import Path
 
 from flask import Flask, render_template
+from flask_login import LoginManager
+from flask_wtf.csrf import CSRFProtect
 from flask_sqlalchemy import SQLAlchemy
 import click
 
 
 db = SQLAlchemy()
+login_manager = LoginManager()
+csrf = CSRFProtect()
 
 
 def create_app(test_config=None):
@@ -28,6 +32,23 @@ def create_app(test_config=None):
         app.config.update(test_config)
 
     db.init_app(app)
+    login_manager.init_app(app)
+    csrf.init_app(app)
+    login_manager.login_view = "web.login"
+    login_manager.login_message = "Entre para acessar o sistema."
+
+    from app.models import Usuario
+
+    @login_manager.user_loader
+    def load_user(usuario_id):
+        try:
+            usuario = db.session.get(Usuario, int(usuario_id))
+            return usuario if usuario and usuario.ativo else None
+        except (ValueError, TypeError):
+            return None
+
+    from app.web import web
+    app.register_blueprint(web)
 
     # Importa os modelos para registrá-los no metadata do SQLAlchemy.
     from app import models  # noqa: F401
@@ -37,6 +58,22 @@ def create_app(test_config=None):
         """Cria as tabelas do banco configurado (uso inicial/local)."""
         db.create_all()
         print("Tabelas do Sistema Solidário criadas.")
+
+    @app.cli.command("criar-gestor")
+    @click.option("--nome", prompt=True)
+    @click.option("--email", prompt=True)
+    @click.password_option("--senha", confirmation_prompt=True)
+    def criar_gestor_cli(nome, email, senha):
+        """Cria primeiro gestor localmente sem senha fixa no código."""
+        from app.models import Usuario
+        email = email.strip().lower()
+        if db.session.execute(db.select(Usuario).filter_by(email=email)).scalar_one_or_none():
+            raise click.ClickException("Este e-mail já está cadastrado.")
+        usuario = Usuario(nome=nome.strip(), email=email, perfil="gestor", ativo=True)
+        usuario.definir_senha(senha)
+        db.session.add(usuario)
+        db.session.commit()
+        click.echo("Gestor criado com sucesso.")
 
     @app.cli.command("registrar-doacao")
     @click.option("--produto", "produto_id", type=int, required=True)
@@ -67,10 +104,6 @@ def create_app(test_config=None):
         except ValueError as erro:
             raise click.ClickException(str(erro)) from erro
         click.echo(f"Distribuição {distribuicao.id} registrada: {quantidade} unidade(s).")
-
-    @app.get("/")
-    def index():
-        return render_template("index.html")
 
     @app.get("/health")
     def health():
