@@ -22,7 +22,19 @@ def create_app(test_config=None):
     instance_path.mkdir(parents=True, exist_ok=True)
 
     app.config.from_mapping(
-        SECRET_KEY=os.environ.get("SECRET_KEY", "dev-only-change-me"),
+        if os.environ.get("FLASK_ENV_MODE") == "production":
+    if not os.environ.get("SECRET_KEY"):
+        raise RuntimeError(
+            "SECRET_KEY obrigatória em produção."
+        )
+        SECRET_KEY=(
+    os.environ.get("SECRET_KEY")
+    or (
+        "dev-only-change-me"
+        if os.environ.get("FLASK_ENV_MODE", "development") == "development"
+        else None
+        )
+    ),
         SQLALCHEMY_DATABASE_URI=os.environ.get(
             "DATABASE_URL", f"sqlite:///{instance_path / 'sistema_solidario.db'}"
         ),
