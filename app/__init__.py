@@ -15,6 +15,7 @@ login_manager = LoginManager()
 csrf = CSRFProtect()
 
 
+
 def create_app(test_config=None):
     """Cria e configura a aplicação Flask."""
     app = Flask(__name__)
@@ -22,26 +23,24 @@ def create_app(test_config=None):
     instance_path.mkdir(parents=True, exist_ok=True)
 
     app.config.from_mapping(
-        if os.environ.get("FLASK_ENV_MODE") == "production":
-    if not os.environ.get("SECRET_KEY"):
-        raise RuntimeError(
-            "SECRET_KEY obrigatória em produção."
-        )
-        SECRET_KEY=(
-    os.environ.get("SECRET_KEY")
-    or (
-        "dev-only-change-me"
-        if os.environ.get("FLASK_ENV_MODE", "development") == "development"
-        else None
-        )
-    ),
+        SECRET_KEY=os.environ.get(
+            "SECRET_KEY", "dev-only-change-me"
+        ),
         SQLALCHEMY_DATABASE_URI=os.environ.get(
-            "DATABASE_URL", f"sqlite:///{instance_path / 'sistema_solidario.db'}"
+            "DATABASE_URL",
+            f"sqlite:///{instance_path / 'sistema_solidario.db'}"
         ),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
     )
+
     if test_config is not None:
         app.config.update(test_config)
+
+    if os.environ.get("FLASK_ENV_MODE") == "production":
+        if not os.environ.get("SECRET_KEY"):
+            raise RuntimeError(
+                "SECRET_KEY obrigatória em produção."
+    )
 
     db.init_app(app)
     login_manager.init_app(app)
